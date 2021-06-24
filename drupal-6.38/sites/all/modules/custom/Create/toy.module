@@ -1,0 +1,187 @@
+<?php
+/**
+* Implementation of hook_node_info().
+*/
+function toy_node_info() {
+// We return an array since a module can define multiple node types.
+// We're only defining one node type, type 'book'.
+return array(
+'toy' => array(
+'name' => t('Toy'), // Required.
+'module' => 'toy', // Required.
+'description' => t('Describe toy details.'), // Required.
+'has_title' => TRUE,
+'title_label' => t('Toy Name'),
+'has_body' => TRUE,
+'body_label' => t('Description'),
+'min_word_count' => 2,
+'locked' => TRUE
+)
+);
+}
+
+/**
+* Implementation of hook_menu_alter().
+*/
+function toy_menu_alter(&$callbacks) {
+// If the user does not have 'administer nodes' permission,
+// disable the toy menu item by setting its access callback to FALSE.
+if (!user_access('administer nodes')) {
+$callbacks['node/add/toy']['access callback'] = FALSE;
+// Must unset access arguments or Drupal will use user_access()
+// as a default access callback.
+unset($callbacks['node/add/toy']['access arguments']);
+}
+}
+
+
+/**
+* Implementation of hook_perm().
+*/
+function toy_perm() {
+return array('create toy', 'edit toy', 'delete toy', 'view toy');
+}
+
+
+/**
+* Implementation of hook_access().
+*/
+function toy_access($op, $node, $account) {
+$is_author = $account->uid == $node->uid;
+switch ($op) {
+case 'create':
+// Allow if user's role has 'create joke' permission.
+return user_access('create toy', $account);
+    
+case 'update':
+// Allow if user's role has 'edit own joke' permission and user is
+// the author; or if the user's role has 'edit any joke' permission.
+return user_access('edit toy', $account) && $is_author ||
+user_access('edit toy', $account);
+    
+case 'delete':
+// Allow if user's role has 'delete own joke' permission and user is
+// the author; or if the user's role has 'delete any joke' permission.
+return user_access('delete toy', $account) && $is_author ||
+user_access('delete toy', $account);
+    
+case 'view':
+// Allow if user's role has 'delete own joke' permission and user is
+// the author; or if the user's role has 'delete any joke' permission.
+return user_access('view toy', $account) && $is_author ||
+user_access('view toy', $account);
+
+}
+}
+
+
+/**
+* Implementation of hook_form().
+*/
+function toy_form($node) {
+$type = node_get_types('type', $node);
+$form['title'] = array(
+'#type' => 'textfield',
+'#title' => check_plain($type->title_label),
+'#required' => TRUE,
+'#default_value' => $node->title,
+'#weight' => -5,
+'#maxlength' => 255,);
+$form['body_filter']['body'] = array(
+'#type' => 'textarea',
+'#title' => check_plain($type->body_label),
+'#default_value' => $node->body,
+'#rows' => 4,
+'#required' => TRUE,);
+//$form['body_filter']['filter'] = filter_form($node->format);
+$form['price'] = array(
+'#type' => 'textfield',
+'#title' => t('Price'),
+'#required' => TRUE,
+'#default_value' => isset($node->price) ? $node->price : '',
+'#weight' => 5);
+return $form;
+}
+
+/**
+* Implementation of hook_validate().
+*/
+function toy_validate($node) {
+// Enforce a maximum price should be 1000.
+if (isset($node->price) && $node->price > 1000) {
+$type = node_get_types('type', $node);
+form_set_error('price', t('The price of  @type is too high.It should be under 1000.', array('@type' => $type->name)));
+}
+}
+
+/**
+* Implementation of hook_insert().
+*/
+function toy_insert($node) {
+db_query("INSERT INTO {toy} (nid, name, description, price, created) VALUES (%d, '%s', '%s', %d, %d)",
+$node->nid,  $node->title, $node->body, $node->price, time());
+}
+
+/**
+* Implementation of hook_update().
+*/
+function toy_update($node) {
+db_query("UPDATE {toy} SET description = '%s', price=%d  WHERE nid = %d",
+$node->body, $node->price);
+}
+
+/**
+* Implementation of hook_delete().
+*/
+function toy_delete(&$node) {
+// Delete the related information we were saving for this node.
+db_query('DELETE FROM {toy} WHERE nid = %d', $node->nid);
+}
+
+/**
+* Implementation of hook_load().
+*/
+function toy_load($node) {
+return db_fetch_object(db_query('SELECT price FROM {toy} WHERE nid = %d',
+$node->nid));
+}
+
+/**
+* Implementation of hook_view().
+*/
+function toy_view($node, $teaser = FALSE, $page = FALSE) {
+// If $teaser is FALSE, the entire node is being displayed.
+if (!$teaser) {
+// Use Drupal's default node view.
+$node = node_prepare($node, $teaser);
+$node->content['price'] = array(
+'#value' => theme('toy_price', $node),
+'#weight' => 2
+);
+}
+// If $teaser is TRUE, node is being displayed as a teaser,
+// such as on a node listing page. We omit the price in this case.
+if ($teaser) {
+// Use Drupal's default node view.
+$node = node_prepare($node, $teaser);
+}
+return $node;
+}
+
+/**
+* Implementation of hook_theme().
+* We declare toy_price so Drupal will look for a function
+* named theme_toy_price().
+*/
+function toy_theme() {
+return array(
+'toy_price' => array(
+'arguments' => array('node'),
+),
+);
+}
+function theme_toy_price($node) {
+$output = '<div class="toy-price">'.
+check_markup($node->price). '</div><br />';
+return $output;
+}

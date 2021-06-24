@@ -1,0 +1,5 @@
+name = book form
+description = Enables user to create,edit,view the book
+core = 6.x 
+
+
