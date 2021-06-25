@@ -1,0 +1,120 @@
+<?php
+
+function book_install(){
+
+	drupal_install_schema('book');
+
+}
+
+
+function book_uninstall(){
+
+	drupal_uninstall_schema('book');
+}
+
+
+function book_schema(){
+
+
+	$schema['book'] = array();
+
+	$schema['book']['fields'] = array(
+
+
+		'bid' => array(
+
+			'type' => 'serial',
+			'unsigned' => TRUE,
+			'not null' => TRUE,
+			'descripton' => 'book id'
+		) ,
+            
+            
+                'nid' => array(
+
+			'type' => 'int',
+			'unsigned' => TRUE,
+			'not null' => TRUE,
+			'descripton' => 'node id'
+		) ,
+
+		
+		'name' => array(
+
+			'type' => 'varchar',
+			'length' => 100,
+			'not null' => TRUE,
+			'descripton' => "name of a book"
+
+		),
+
+		'description' => array(
+
+			'type' => 'varchar',
+			'length' => 500,
+			'not null' => TRUE,
+			'description' => "about the book"
+
+		) ,
+
+		'price' => array(
+
+			'type' => 'int',
+			'length' => 20,
+			'not null' => TRUE,
+                        'unsigned' => TRUE,
+			'descripton' => "price of the book"
+
+		),
+            
+                'Author' => array(
+
+			'type' => 'varchar',
+			'length' => 100,
+			'not null' => TRUE,
+			'description' => "Author of the book"
+
+		) ,
+            
+                'no_of_pages' => array(
+
+			'type' => 'int',
+			'length' => 20,
+			'not null' => TRUE,
+                        'unsigned' => TRUE,
+			'descripton' => "No of Pages of the book"
+
+		),
+            
+            
+                'company' => array(
+
+			'type' => 'varchar',
+			'length' => 100,
+			'not null' => TRUE,
+			'descripton' => "Author of the book"
+
+		),
+
+		'created' => array(
+
+			'type' => 'int',
+			'not null' => TRUE,
+			'unsigned' => TRUE,
+			'default' => 0,
+			'description' => 'unix timestamp'
+
+		)
+
+
+
+	);
+
+
+	$schema['book']['primary key'] = array('bid');
+
+	return $schema;
+}
+
+
+
